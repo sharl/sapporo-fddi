@@ -1,0 +1,4 @@
+schedule
+pystray
+requests
+win11toast
