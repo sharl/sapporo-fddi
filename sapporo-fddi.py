@@ -37,27 +37,27 @@ class taskTray:
         r = None
         try:
             r = requests.get(URL)
+            if r and r.status_code == 200:
+                content = r.content.decode('utf-8')
+                m = re.search(r'(?s)<h2>現在の災害出動</h2>(.*?)出動中の災害は以上です', content)
+                if m:
+                    match = m.group(1).replace('<BR>', '').replace('\u3000', '').split('\u25cf')[1:]
+                    lines = []
+                    for t in match:
+                        lines.append(t.strip())
+                        body = '\r\n'.join(lines)
+                    if self.body != body:
+                        self.body = body
+                        notify(self.body)
+                        image = self.amb_icon
+                else:
+                    self.body = '現在出動中の災害はありません'
+                    image = self.normal_icon
+            self.app.title = self.body
+            self.app.icon = image
+            self.app.update_menu()
         except Exception:
             pass
-        if r and r.status_code == 200:
-            content = r.content.decode('utf-8')
-            m = re.search(r'(?s)<h2>現在の災害出動</h2>(.*?)出動中の災害は以上です', content)
-            if m:
-                match = m.group(1).replace('<BR>', '').replace('\u3000', '').split('\u25cf')[1:]
-                lines = []
-                for t in match:
-                    lines.append(t.strip())
-                body = '\r\n'.join(lines)
-                if self.body != body:
-                    self.body = body
-                    notify(self.body)
-                image = self.amb_icon
-            else:
-                self.body = '現在出動中の災害はありません'
-                image = self.normal_icon
-        self.app.title = self.body
-        self.app.icon = image
-        self.app.update_menu()
 
     def runSchedule(self):
         schedule.every(INTERVAL).seconds.do(self.doCheck)
