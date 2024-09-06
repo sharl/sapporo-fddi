@@ -35,6 +35,7 @@ class taskTray:
 
     def doCheck(self):
         r = None
+        image = self.normal_icon
         try:
             r = requests.get(URL)
             if r and r.status_code == 200:
@@ -49,15 +50,14 @@ class taskTray:
                     if self.body != body:
                         self.body = body
                         notify(self.body)
-                        image = self.amb_icon
+                    image = self.amb_icon
                 else:
                     self.body = '現在出動中の災害はありません'
-                    image = self.normal_icon
             self.app.title = self.body
             self.app.icon = image
             self.app.update_menu()
-        except Exception:
-            pass
+        except Exception as e:
+            print(e)
 
     def runSchedule(self):
         schedule.every(INTERVAL).seconds.do(self.doCheck)
