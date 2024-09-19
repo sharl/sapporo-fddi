@@ -14,6 +14,7 @@ from win11toast import notify
 
 INTERVAL = 60
 URL = 'http://www.119.city.sapporo.jp/saigai/sghp.html'
+filter_word = ''
 
 
 class taskTray:
@@ -42,11 +43,19 @@ class taskTray:
                 content = r.content.decode('utf-8')
                 m = re.search(r'(?s)<h2>現在の災害出動</h2>(.*?)出動中の災害は以上です', content)
                 if m:
-                    match = m.group(1).replace('<BR>', '').replace('\u3000', '').split('\u25cf')[1:]
+                    match = m.group(1).replace('<BR>', '').replace('\u3000', '').strip().split('\u25cf')
                     lines = []
                     for t in match:
-                        lines.append(t.strip())
-                        body = '\r\n'.join(lines)
+                        filtered = []
+                        header, *locations = t.strip().split('\r\n')
+                        for loc in locations:
+                            if filter_word in loc:
+                                filtered.append(loc)
+                        if filtered:
+                            lines.append(header.strip())
+                            for loc in filtered:
+                                lines.append(loc.strip())
+                    body = '\r\n'.join(lines)
                     if self.body != body:
                         self.body = body
                         notify(self.body)
