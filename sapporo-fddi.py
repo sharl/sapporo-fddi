@@ -4,28 +4,33 @@ import io
 import binascii
 import threading
 import re
+import asyncio
+import json
 import webbrowser
 
 import schedule
 from pystray import Icon, Menu, MenuItem
 from PIL import Image
+import winsdk.windows.devices.geolocation as wdg
 import requests
 from win11toast import notify
 
 INTERVAL = 60
 URL = 'http://www.119.city.sapporo.jp/saigai/sghp.html'
-filter_word = ''
 
 
 class taskTray:
     def __init__(self):
         self.running = False
         self.body = ''
+        self.ward = self.getNearWard()
+        self.use_filter = False
 
         self.normal_icon = Image.open(io.BytesIO(binascii.unhexlify(ICON.replace('\n', '').strip())))
         self.amb_icon = Image.open(io.BytesIO(binascii.unhexlify(AMB.replace('\n', '').strip())))
         menu = Menu(
             MenuItem('Open', self.doOpen, default=True, visible=False),
+            MenuItem(self.ward, self.on_clicked, checked=lambda _: self.use_filter),
             MenuItem('Exit', self.stopApp),
         )
         self.app = Icon(name='PYTHON.win32.sapporo-fddi', title='sapporo fire department dispatch information', icon=self.normal_icon, menu=menu)
@@ -33,6 +38,30 @@ class taskTray:
 
     def doOpen(self):
         webbrowser.open(URL)
+
+    async def getCoords(self):
+        locator = wdg.Geolocator()
+        pos = await locator.get_geoposition_async()
+        return [pos.coordinate.latitude, pos.coordinate.longitude]
+
+    def getLoc(self):
+        try:
+            return asyncio.run(self.getCoords())
+        except Exception as e:
+            notify(e)
+
+    def getNearWard(self):
+        lat, lng = self.getLoc()
+        url = f'https://geoapi.heartrails.com/api/json?method=searchByGeoLocation&x={lng}&y={lat}'
+        r = requests.get(url)
+        if r and r.status_code == 200:
+            loc = json.loads(r.content.decode('utf-8'))['response']['location'][0]
+            return loc['city']
+        return ''
+
+    def on_clicked(self, _, __):
+        self.use_filter = not self.use_filter
+        self.doCheck()
 
     def doCheck(self):
         r = None
@@ -49,7 +78,7 @@ class taskTray:
                         filtered = []
                         header, *locations = t.strip().split('\r\n')
                         for loc in locations:
-                            if filter_word in loc:
+                            if (self.use_filter and self.ward.strip('札幌市') in loc) or (not self.use_filter):
                                 filtered.append(loc)
                         if filtered:
                             lines.append(header.strip())
@@ -58,15 +87,21 @@ class taskTray:
                     body = '\r\n'.join(lines)
                     if self.body != body:
                         self.body = body
-                        notify(self.body)
+                        if self.body:
+                            notify(self.body)
+                        if self.use_filter and self.ward not in self.body:
+                            self.body = f'現在{self.ward}に出動中の災害はありません'
                     image = self.amb_icon
                 else:
-                    self.body = '現在出動中の災害はありません'
+                    if self.use_filter:
+                        self.body = f'現在{self.ward}に出動中の災害はありません'
+                    else:
+                        self.body = '現在出動中の災害はありません'
             self.app.title = self.body
             self.app.icon = image
             self.app.update_menu()
         except Exception as e:
-            print(e)
+            notify(e)
 
     def runSchedule(self):
         schedule.every(INTERVAL).seconds.do(self.doCheck)
