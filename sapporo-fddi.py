@@ -78,7 +78,7 @@ class taskTray:
                         filtered = []
                         header, *locations = t.strip().split('\r\n')
                         for loc in locations:
-                            if (self.use_filter and self.ward.strip('札幌市') in loc) or (not self.use_filter):
+                            if (self.use_filter and (self.ward.strip('札幌市') in loc)) or (not self.use_filter):
                                 filtered.append(loc)
                         if filtered:
                             lines.append(header.strip())
@@ -86,18 +86,20 @@ class taskTray:
                                 lines.append(loc.strip())
                     body = '\r\n'.join(lines)
                     if self.body != body:
+                        if body:
+                            notify(body)
                         self.body = body
-                        if self.body:
-                            notify(self.body)
-                        if self.use_filter and self.ward not in self.body:
-                            self.body = f'現在{self.ward}に出動中の災害はありません'
+                        self.app.title = self.body
+                    if self.use_filter and (self.ward.strip('札幌市') not in self.body):
+                        self.app.title = f'現在{self.ward}に出動中の災害はありません'
+
                     image = self.amb_icon
                 else:
                     if self.use_filter:
-                        self.body = f'現在{self.ward}に出動中の災害はありません'
+                        self.app.title = self.body = f'現在{self.ward}に出動中の災害はありません'
                     else:
-                        self.body = '現在出動中の災害はありません'
-            self.app.title = self.body
+                        self.app.title = self.body = '現在出動中の災害はありません'
+            # self.app.title = self.body
             self.app.icon = image
             self.app.update_menu()
         except Exception as e:
