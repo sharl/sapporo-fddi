@@ -103,7 +103,7 @@ class taskTray:
             self.app.icon = image
             self.app.update_menu()
         except Exception as e:
-            notify(e)
+            notify(type(e), e)
 
     def runSchedule(self):
         schedule.every(INTERVAL).seconds.do(self.doCheck)
