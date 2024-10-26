@@ -48,7 +48,7 @@ class taskTray:
         try:
             return asyncio.run(self.getCoords())
         except Exception as e:
-            notify(e)
+            print(e)
 
     def getNearWard(self):
         lat, lng = self.getLoc()
@@ -103,7 +103,7 @@ class taskTray:
             self.app.icon = image
             self.app.update_menu()
         except Exception as e:
-            notify(type(e), e)
+            print(e)
 
     def runSchedule(self):
         schedule.every(INTERVAL).seconds.do(self.doCheck)
