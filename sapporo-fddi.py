@@ -28,16 +28,30 @@ class taskTray:
 
         self.normal_icon = Image.open(io.BytesIO(binascii.unhexlify(ICON.replace('\n', '').strip())))
         self.amb_icon = Image.open(io.BytesIO(binascii.unhexlify(AMB.replace('\n', '').strip())))
-        menu = Menu(
-            MenuItem('Open', self.doOpen, default=True, visible=False),
-            MenuItem(self.ward, self.on_clicked, checked=lambda _: self.use_filter),
-            MenuItem('Exit', self.stopApp),
-        )
+        menu = self.buildMenu()
         self.app = Icon(name='PYTHON.win32.sapporo-fddi', title='sapporo fire department dispatch information', icon=self.normal_icon, menu=menu)
         self.doCheck()
 
+    def buildMenu(self, locations=[]):
+        item = [
+            MenuItem('Open', self.doOpen, default=True, visible=False),
+            MenuItem(self.ward, self.on_clicked, checked=lambda _: self.use_filter),
+            Menu.SEPARATOR,
+        ]
+        for loc in locations:
+            item.append(MenuItem(loc, self.openMap))
+        item.append(Menu.SEPARATOR)
+        item.append(MenuItem('Exit', self.stopApp))
+        return Menu(*item)
+
     def doOpen(self):
         webbrowser.open(URL)
+
+    def openMap(self, _, item):
+        if '区' in str(item):
+            m = re.match(r'・(.*?)（', str(item))
+            if m:
+                webbrowser.open('https://maps.google.com/?q=' + m.group(1))
 
     async def getCoords(self):
         locator = wdg.Geolocator()
@@ -99,6 +113,7 @@ class taskTray:
                         self.app.title = self.body = f'現在{self.ward}に出動中の災害はありません'
                     else:
                         self.app.title = self.body = '現在出動中の災害はありません'
+            self.app.menu = self.buildMenu(self.body.split())
             self.app.icon = image
             self.app.update_menu()
         except Exception as e:
