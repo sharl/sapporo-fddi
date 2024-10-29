@@ -113,7 +113,7 @@ class taskTray:
                         self.app.title = self.body = f'現在{self.ward}に出動中の災害はありません'
                     else:
                         self.app.title = self.body = '現在出動中の災害はありません'
-            self.app.menu = self.buildMenu(self.body.split())
+            self.app.menu = self.buildMenu(self.body.split('\r\n'))
             self.app.icon = image
             self.app.update_menu()
         except Exception as e:
