@@ -39,7 +39,8 @@ class taskTray:
             Menu.SEPARATOR,
         ]
         for loc in locations:
-            item.append(MenuItem(loc, self.openMap))
+            if loc:
+                item.append(MenuItem(loc, self.openMap))
         item.append(Menu.SEPARATOR)
         item.append(MenuItem('Exit', self.stopApp))
         return Menu(*item)
