@@ -16,6 +16,7 @@ import requests
 from win11toast import notify
 
 INTERVAL = 60
+TITLE = 'sapporo fire department dispatch information'
 URL = 'http://www.119.city.sapporo.jp/saigai/sghp.html'
 
 
@@ -29,7 +30,7 @@ class taskTray:
         self.normal_icon = Image.open(io.BytesIO(binascii.unhexlify(ICON.replace('\n', '').strip())))
         self.amb_icon = Image.open(io.BytesIO(binascii.unhexlify(AMB.replace('\n', '').strip())))
         menu = self.buildMenu()
-        self.app = Icon(name='PYTHON.win32.sapporo-fddi', title='sapporo fire department dispatch information', icon=self.normal_icon, menu=menu)
+        self.app = Icon(name='PYTHON.win32.sapporo-fddi', title=TITLE, icon=self.normal_icon, menu=menu)
         self.doCheck()
 
     def buildMenu(self, locations=[]):
@@ -102,7 +103,11 @@ class taskTray:
                     body = '\r\n'.join(lines)
                     if self.body != body:
                         if body:
-                            notify(body)
+                            notify(
+                                title=body,
+                                app_id=TITLE,
+                                audio='Assets/ambulance.mp3',
+                            )
                         self.body = body
                         self.app.title = self.body
                     if self.use_filter and (self.ward.replace('札幌市', '') not in self.body):
