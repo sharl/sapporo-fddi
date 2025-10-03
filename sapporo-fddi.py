@@ -146,17 +146,14 @@ class taskTray:
                 )
             if (self.use_filter and self.ward.replace('札幌市', '') in body) or (not self.use_filter):
                 image = self.amb_icon
-            if self.use_filter:
-                ward = self.ward.replace('札幌市', '')
-                lines = []
-                for city in dispatches:
-                    for dispatch in dispatches[city]:
-                        for location in dispatches[city][dispatch]:
-                            if ward in location:
-                                lines.append(location.replace('\u30fb', ''))
-                self.app.title = '\r\n'.join(lines)
-            else:
-                self.app.title = body
+            # buile title
+            ward = self.ward.replace('札幌市', '')
+            lines = []
+            for city in dispatches:
+                for dispatch in dispatches[city]:
+                    for location in dispatches[city][dispatch]:
+                        lines.append(location.replace('\u30fb', ''))
+            self.app.title = '\r\n'.join(lines)
             self.body = body
         else:
             if self.use_filter:
