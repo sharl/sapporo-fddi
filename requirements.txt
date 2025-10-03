@@ -3,3 +3,4 @@ pystray
 winsdk
 requests
 win11toast
+bs4
