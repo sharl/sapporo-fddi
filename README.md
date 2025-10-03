@@ -1,6 +1,6 @@
 # sapporo-fddi
 
-札幌市消防出動情報 http://www.119.city.sapporo.jp/saigai/sghp.html を利用して、タスクトレイに常駐して災害出動を通知
+札幌市消防出動情報 https://www.119.city.sapporo.jp/saigai/sghp.html を利用して、タスクトレイに常駐して災害出動を通知
 
 該当ページのフォーマット変更により
 
