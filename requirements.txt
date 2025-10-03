@@ -4,3 +4,4 @@ winsdk
 requests
 win11toast
 bs4
+darkdetect

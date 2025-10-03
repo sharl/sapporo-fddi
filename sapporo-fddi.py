@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import binascii
+import ctypes
 import io
 import json
 import re
@@ -12,6 +13,7 @@ from PIL import Image
 from bs4 import BeautifulSoup as bs
 from pystray import Icon, Menu, MenuItem
 from win11toast import notify
+import darkdetect as dd
 import requests
 import schedule
 import winsdk.windows.devices.geolocation as wdg
@@ -19,6 +21,14 @@ import winsdk.windows.devices.geolocation as wdg
 INTERVAL = 60
 TITLE = 'sapporo fire department dispatch information'
 URL = 'http://www.119.city.sapporo.jp/saigai/sghp.html'
+
+PreferredAppMode = {
+    'Light': 0,
+    'Dark': 1,
+}
+
+# https://github.com/moses-palmer/pystray/issues/130
+ctypes.windll['uxtheme.dll'][135](PreferredAppMode[dd.theme()])
 
 
 def check():
