@@ -1,23 +1,53 @@
 # -*- coding: utf-8 -*-
-import time
-import io
-import binascii
-import threading
-import re
 import asyncio
+import binascii
+import io
 import json
+import re
+import threading
+import time
 import webbrowser
 
-import schedule
-from pystray import Icon, Menu, MenuItem
 from PIL import Image
-import winsdk.windows.devices.geolocation as wdg
-import requests
+from bs4 import BeautifulSoup as bs
+from pystray import Icon, Menu, MenuItem
 from win11toast import notify
+import requests
+import schedule
+import winsdk.windows.devices.geolocation as wdg
 
 INTERVAL = 60
 TITLE = 'sapporo fire department dispatch information'
 URL = 'http://www.119.city.sapporo.jp/saigai/sghp.html'
+
+
+def check():
+    NONDISPATCH = '現在出動中の災害はありません'
+    dispatches = {
+        # '札幌市': {
+        #     火災出動: [],
+        #     車両火災出動: [],
+        #     救助出動: [],
+        #     水難救助出動: [],
+        #     警戒出動: [],
+        #     ガス漏れ出動: [],
+        #     救急隊支援出動: [],
+        # }
+    }
+    with requests.get(URL) as r:
+        soup = bs(r.content.decode('utf-8'), 'html.parser')
+        contents = soup.find(id='tmp_contents').text.split('現在の')[1].split('\u3007')[1:]
+        # parse
+        for c in contents:
+            city, _contents = c.split('\r\n', 1)
+            for d in _contents.strip().replace(NONDISPATCH, '').strip().split('\u25cf'):
+                if d:
+                    ls = d.split()
+                    if city not in dispatches:
+                        dispatches[city] = {}
+                    dispatches[city][ls[0]] = ls[1:]
+
+    return dispatches
 
 
 class taskTray:
@@ -41,7 +71,10 @@ class taskTray:
         ]
         for loc in locations:
             if loc:
-                item.append(MenuItem(loc, self.openMap))
+                if loc.startswith('\u30fb'):
+                    item.append(MenuItem(loc, self.openMap))
+                else:
+                    item.append(MenuItem(loc, lambda _: False))
         item.append(Menu.SEPARATOR)
         item.append(MenuItem('Exit', self.stopApp))
         return Menu(*item)
@@ -53,7 +86,7 @@ class taskTray:
         if '区' in str(item):
             m = re.match(r'・(.*?)（', str(item))
             if m:
-                webbrowser.open('https://maps.google.com/?q=' + m.group(1))
+                webbrowser.open('https://maps.google.com/?q=' + m.group(1).replace('付近', ''))
 
     async def getCoords(self):
         locator = wdg.Geolocator()
@@ -69,8 +102,7 @@ class taskTray:
     def getNearWard(self):
         lat, lng = self.getLoc()
         url = f'https://geoapi.heartrails.com/api/json?method=searchByGeoLocation&x={lng}&y={lat}'
-        r = requests.get(url)
-        if r and r.status_code == 200:
+        with requests.get(url) as r:
             loc = json.loads(r.content.decode('utf-8'))['response']['location'][0]
             return loc['city']
         return ''
@@ -80,50 +112,41 @@ class taskTray:
         self.doCheck()
 
     def doCheck(self):
-        r = None
         image = self.normal_icon
+        dispatches = {}
         try:
-            r = requests.get(URL)
-            if r and r.status_code == 200:
-                content = r.content.decode('utf-8')
-                m = re.search(r'(?s)<h2>現在の災害出動</h2>(.*?)出動中の災害は以上です', content)
-                if m:
-                    match = m.group(1).replace('<BR>', '').replace('\u3000', '').strip().split('\u25cf')
-                    lines = []
-                    for t in match:
-                        filtered = []
-                        header, *locations = t.strip().split('\r\n')
-                        for loc in locations:
-                            if (self.use_filter and (self.ward.replace('札幌市', '') in loc)) or (not self.use_filter):
-                                filtered.append(loc)
-                        if filtered:
-                            lines.append(header.strip())
-                            for loc in filtered:
-                                lines.append(loc.strip())
-                    body = '\r\n'.join(lines)
-                    if self.body != body:
-                        if body:
-                            notify(
-                                title=body,
-                                app_id=TITLE,
-                                audio='Assets/ambulance.mp3',
-                            )
-                        self.body = body
-                        self.app.title = self.body
-                    if self.use_filter and (self.ward.replace('札幌市', '') not in self.body):
-                        self.app.title = f'現在{self.ward}に出動中の災害はありません'
-
-                    image = self.amb_icon
-                else:
-                    if self.use_filter:
-                        self.app.title = self.body = f'現在{self.ward}に出動中の災害はありません'
-                    else:
-                        self.app.title = self.body = '現在出動中の災害はありません'
-            self.app.menu = self.buildMenu(self.body.split('\r\n'))
-            self.app.icon = image
-            self.app.update_menu()
+            dispatches = check()
         except Exception as e:
             print(e)
+
+        lines = []
+        for city in dispatches:
+            lines.append(city)
+            for dispatch in dispatches[city]:
+                lines.append(dispatch)
+                for location in dispatches[city][dispatch]:
+                    lines.append(location)
+
+        body = '\r\n'.join(lines)
+        if body:
+            if self.body != body:
+                notify(
+                    title=body,
+                    app_id=TITLE,
+                    audio='Assets/ambulance.mp3',
+                )
+            if (self.use_filter and self.ward.replace('札幌市', '') in body) or (not self.use_filter):
+                image = self.amb_icon
+            self.app.title = self.body = body
+        else:
+            if self.use_filter:
+                self.app.title = self.body = f'現在{self.ward}に出動中の災害はありません'
+            else:
+                self.app.title = self.body = '現在出動中の災害はありません'
+
+        self.app.menu = self.buildMenu(self.body.split('\r\n'))
+        self.app.icon = image
+        self.app.update_menu()
 
     def runSchedule(self):
         schedule.every(INTERVAL).seconds.do(self.doCheck)
