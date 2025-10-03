@@ -93,10 +93,9 @@ class taskTray:
         webbrowser.open(URL)
 
     def openMap(self, _, item):
-        if '区' in str(item):
-            m = re.match(r'・(.*?)（', str(item))
-            if m:
-                webbrowser.open('https://maps.google.com/?q=' + m.group(1).replace('付近', ''))
+        m = re.match(r'・(.*?)（', str(item))
+        if m:
+            webbrowser.open('https://maps.google.com/?q=' + m.group(1).replace('付近', ''))
 
     async def getCoords(self):
         locator = wdg.Geolocator()
