@@ -20,7 +20,7 @@ import winsdk.windows.devices.geolocation as wdg
 
 INTERVAL = 60
 TITLE = 'sapporo fire department dispatch information'
-URL = 'http://www.119.city.sapporo.jp/saigai/sghp.html'
+URL = 'https://www.119.city.sapporo.jp/saigai/sghp.html'
 
 PreferredAppMode = {
     'Light': 0,
