@@ -152,14 +152,19 @@ class taskTray:
             for city in dispatches:
                 for dispatch in dispatches[city]:
                     for location in dispatches[city][dispatch]:
-                        lines.append(location.replace('\u30fb', ''))
+                        if '\uff08' in location:
+                            location = location[:location.index('\uff08')]
+                        if (self.use_filter and ward in location) or (not self.use_filter):
+                            lines.append(location.replace('\u30fb', ''))
             self.app.title = '\r\n'.join(lines)
             self.body = body
         else:
-            if self.use_filter:
-                self.app.title = self.body = f'現在{self.ward}に出動中の災害はありません'
-            else:
-                self.app.title = self.body = '現在出動中の災害はありません'
+            self.app.title = body
+
+        if self.use_filter and not self.app.title:
+            self.app.title = self.body = f'現在{self.ward}に出動中の災害はありません'
+        if not self.app.title:
+            self.app.title = self.body = '現在出動中の災害はありません'
 
         self.app.menu = self.buildMenu(self.body.split('\r\n'))
         self.app.icon = image
