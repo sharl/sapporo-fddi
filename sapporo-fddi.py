@@ -113,7 +113,7 @@ class taskTray:
         url = f'https://geoapi.heartrails.com/api/json?method=searchByGeoLocation&x={lng}&y={lat}'
         with requests.get(url) as r:
             loc = json.loads(r.content.decode('utf-8'))['response']['location'][0]
-            return loc['city']
+            return loc['city'].replace('札幌市', '')
         return ''
 
     def on_clicked(self, _, __):
@@ -144,10 +144,10 @@ class taskTray:
                     app_id=TITLE,
                     audio='Assets/ambulance.mp3',
                 )
-            if (self.use_filter and self.ward.replace('札幌市', '') in body) or (not self.use_filter):
+            if (self.use_filter and self.ward in body) or (not self.use_filter):
                 image = self.amb_icon
             # buile title
-            ward = self.ward.replace('札幌市', '')
+            ward = self.ward
             lines = []
             for city in dispatches:
                 for dispatch in dispatches[city]:
