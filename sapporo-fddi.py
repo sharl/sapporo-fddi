@@ -46,7 +46,7 @@ def check():
     }
     with requests.get(URL) as r:
         soup = bs(r.content.decode('utf-8'), 'html.parser')
-        contents = soup.find(id='tmp_contents').text.split('現在の')[1].split('\u3007')[1:]
+        contents = soup.find(id='tmp_contents').text.replace(' 付近', '付近').split('現在の')[1].split('\u3007')[1:]
         # parse
         for c in contents:
             city, _contents = c.split('\r\n', 1)
