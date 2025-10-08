@@ -136,7 +136,7 @@ class taskTray:
                 for location in dispatches[city][dispatch]:
                     lines.append(location)
 
-        body = '\r\n'.join(lines)
+        body = '\n'.join(lines)
         if body:
             if self.body != body:
                 notify(
@@ -155,8 +155,19 @@ class taskTray:
                         if '\uff08' in location:
                             location = location[:location.index('\uff08')]
                         if (self.use_filter and ward in location) or (not self.use_filter):
-                            lines.append(location.replace('\u30fb', ''))
-            self.app.title = '\r\n'.join(lines)
+                            for w in ['市', '区']:
+                                if w in location:
+                                    location = location[location.index(w) + 1:]
+                            tmp = '\n'.join(lines + [location])
+                            tmpl = len(tmp)
+                            print(tmpl, tmp)
+                            # ValueError: string too long (nnn, maximum length 128)
+                            if tmpl > 128:
+                                lines.append('...')
+                                break
+                            else:
+                                lines.append(location.replace('\u30fb', ''))
+            self.app.title = '\n'.join(lines)
             self.body = body
         else:
             self.app.title = body
@@ -166,7 +177,7 @@ class taskTray:
         if not self.app.title:
             self.app.title = self.body = '現在出動中の災害はありません'
 
-        self.app.menu = self.buildMenu(self.body.split('\r\n'))
+        self.app.menu = self.buildMenu(self.body.split('\n'))
         self.app.icon = image
         self.app.update_menu()
 
