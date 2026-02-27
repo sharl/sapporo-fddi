@@ -143,7 +143,7 @@ class taskTray:
             if self.body != body:
                 notify(
                     title=body,
-                    app_id=TITLE,
+                    # app_id=TITLE,
                     audio={'silent': 'true'},
                 )
                 ws.PlaySound(resource_path('Assets/ambulance.wav'), ws.SND_FILENAME)
