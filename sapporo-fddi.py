@@ -8,6 +8,7 @@ import re
 import threading
 import time
 import webbrowser
+import winsound as ws
 
 from PIL import Image
 from bs4 import BeautifulSoup as bs
@@ -18,6 +19,8 @@ import requests
 import schedule
 import winsdk.windows.devices.geolocation as wdg
 
+from utils import resource_path
+
 INTERVAL = 60
 TITLE = 'sapporo fire department dispatch information'
 URL = 'https://www.119.city.sapporo.jp/saigai/sghp.html'
@@ -26,7 +29,6 @@ PreferredAppMode = {
     'Light': 0,
     'Dark': 1,
 }
-
 # https://github.com/moses-palmer/pystray/issues/130
 ctypes.windll['uxtheme.dll'][135](PreferredAppMode[dd.theme()])
 
@@ -142,8 +144,9 @@ class taskTray:
                 notify(
                     title=body,
                     app_id=TITLE,
-                    audio='Assets/ambulance.mp3',
+                    audio={'silent': 'true'},
                 )
+                ws.PlaySound(resource_path('Assets/ambulance.wav'), ws.SND_FILENAME)
             if (self.use_filter and self.ward in body) or (not self.use_filter):
                 image = self.amb_icon
             # buile title
